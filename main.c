@@ -1,58 +1,40 @@
 #include <windows.h>
 
-#include <windows.h>
-
-LRESULT WinProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-  static HDC hdcMem = NULL;
-  static HBITMAP hBitmap = NULL;
-  static HDC hdcWindow = NULL;
-
-  switch (msg) {
-    case WM_CREATE: {
-      // Create a memory DC for double buffering
-      hdcWindow = GetDC(hwnd);
-      hdcMem = CreateCompatibleDC(hdcWindow);
-      RECT rect;
-      GetClientRect(hwnd, &rect);
-      hBitmap = CreateCompatibleBitmap(hdcWindow, rect.right, rect.bottom);
-      SelectObject(hdcMem, hBitmap);
-      break;
-    }
-
+LRESULT WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  switch (uMsg) {
     case WM_PAINT: {
       PAINTSTRUCT ps;
-      BeginPaint(hwnd, &ps);
+      HDC hDc = BeginPaint(hWnd, &ps);
+      HBRUSH black_brush = CreateSolidBrush(RGB(0,0,0));
+      HBRUSH white_brush = CreateSolidBrush(RGB(255,255,255));
 
-      HBRUSH hBlackBr = CreateSolidBrush(RGB(0,0,0));
+      RECT pong1 = {
+        500, 210, 520, 315
+      };
+      RECT pong2 = {
+        30, 210, 50, 315
+      };
 
-      FillRect(hdcMem, &ps.rcPaint, hBlackBr);
-      RECT rect = { 50, 50, 200, 150 };
-      FillRect(hdcMem, &rect, (HBRUSH)(COLOR_WINDOW + 1));
+      FillRect(hDc, &ps.rcPaint, black_brush);
+      FillRect(hDc, &pong1, white_brush);
+      FillRect(hDc, &pong2, white_brush);
+      DeleteObject(black_brush);
+      ReleaseDC(hWnd, hDc);
 
-      BitBlt(hdcWindow, 0, 0, ps.rcPaint.right, ps.rcPaint.bottom, hdcMem, 0, 0, SRCCOPY);
-
-      EndPaint(hwnd, &ps);
-
-      DeleteObject(hBlackBr);
-      break;
+      EndPaint(hWnd, &ps);
+      return 0;
     }
 
     case WM_DESTROY: {
-      // Clean up resources
-      DeleteDC(hdcMem);
-      DeleteObject(hBitmap);
-      ReleaseDC(hwnd, hdcWindow);
       PostQuitMessage(0);
-      break;
+      return 0;
     }
-
-    default:
-      return DefWindowProc(hwnd, msg, wParam, lParam);
+    default: {
+      return DefWindowProcA(hWnd, uMsg, wParam, lParam);
+    }
   }
-
   return 0;
 }
-
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
   WNDCLASSA class = {
@@ -70,7 +52,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
   RegisterClassA(&class);
 
-  HWND windowHandle = CreateWindow("NirsClass", "Pong", WS_CAPTION | WS_POPUP | WS_SYSMENU, 50, 50, 500, 500, NULL, NULL, hInstance, NULL);
+  HWND windowHandle = CreateWindow("NirsClass", "Pong", WS_CAPTION | WS_POPUP | WS_SYSMENU, 50, 50, 550, 550, NULL, NULL, hInstance, NULL);
   ShowWindow(windowHandle, nShowCmd);
 
   MSG msg;
